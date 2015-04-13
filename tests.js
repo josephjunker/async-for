@@ -43,6 +43,18 @@ describe ('asyncFor', function () {
       loop (done);
     });
 
+    it ('should let you pass arguments through _break', function (done) {
+      var loop = _for (10, function body (i, _break) {
+        _break ('foo', 'bar');
+      });
+
+      loop (function (foo, bar) {
+        foo.should.eql ('foo');
+        bar.should.eql ('bar');
+        done ();
+      });
+    });
+
     it ('should end when the test condition is false', function (done) {
       var loop = _for (0,
         function (i) { return i < 10; },
@@ -152,19 +164,22 @@ describe ('asyncFor', function () {
 
   });
 
-  describe.skip ('tests that should throw', function (done) {
-    // Unfortunately it's difficult to assert that a function threw after a chain of callbacks,
-    // so these are expected to fail with a thrown error
+  describe ('tests that should throw', function (done) {
 
     it ('should throw an error if the same callback is used twice', function (done) {
-      func = _for (10, function (i, _break, _continue, _data) {
+      var loop = _for (10, function (i, _break, _continue, _data) {
           _continue ();
         });
 
-      func.callback (function () {});
+      loop.callback (function () {});
 
-      func ();
-      func ();
+      var runTwice = function () {
+        loop ();
+        loop ();
+      }
+
+      should.throws (runTwice);
+      done();
     });
 
     it ('should throw an error if missing a callback', function (done) {
@@ -173,7 +188,8 @@ describe ('asyncFor', function () {
           _continue ();
         });
 
-       loop ();
+      should.throws (loop);
+      done ();
     });
 
     it ('should throw an error if _break is called twice in one body function', function (done) {
@@ -182,31 +198,46 @@ describe ('asyncFor', function () {
         _break ();
         });
 
-       loop (function () {
-         done ();
-       });
+      var callbackCount = 0;
+      loop.callback (function () {
+        callbackCount++;
+      });
+
+      should.throws (loop, /continued iterating/);
+      callbackCount.should.eql (1);
+      done ();
     });
 
-    it ('should throw an error if _continue is called twice in one body function', function (done) {
-      var loop = _for (10, function (i, _break, _continue, _data) {
-        _continue ();
-        _continue ();
-        });
-
-       loop (function () {
-         done ();
-       });
-    });
-
-    it ('should throw an error if _continue and _break are both called', function (done) {
+    it ('should throw an error if _continue and _break are both called in one iteration', function (done) {
       var loop = _for (10, function (i, _break, _continue, _data) {
         _continue ();
         _break ();
         });
 
-       loop (function () {
-         done ();
-       });
+      var callbackCount = 0;
+      loop.callback (function () {
+        callbackCount++;
+      });
+
+      should.throws (loop, /continued iterating/);
+      callbackCount.should.eql (1);
+      done ();
+    });
+
+    it ('should throw an error if _break and _continue are both called in one iteration', function (done) {
+      var loop = _for (10, function (i, _break, _continue, _data) {
+        _break ();
+        _continue ();
+        });
+
+      var callbackCount = 0;
+      loop.callback (function () {
+        callbackCount++;
+      });
+
+      should.throws (loop, /continued iterating/);
+      callbackCount.should.eql (1);
+      done ();
     });
 
   });
