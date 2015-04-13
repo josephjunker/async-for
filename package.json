@@ -1,0 +1,31 @@
+{
+  "name": "async-for",
+  "version": "1.0.0",
+  "description": "Iterate over async code with a for-loop like syntax",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JosephJNK/async-for"
+  },
+  "keywords": [
+    "async",
+    "asynchronous",
+    "for",
+    "loop",
+    "iterate",
+    "asyncfor",
+    "asyncFor"
+  ],
+  "author": "Joseph Junker",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/JosephJNK/async-for/issues"
+  },
+  "homepage": "https://github.com/JosephJNK/async-for",
+  "devDependencies": {
+    "mocha": "^2.2.4"
+  }
+}
