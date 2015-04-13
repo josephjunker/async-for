@@ -5,12 +5,14 @@ Doesn't create any new functions on each run
 The asynchronous equivalent of for (var i = 0; i < 10; i++) { someCode (); } is
 ```javascript
 var loop = asyncFor () (0; function (i) { return i < 10; }; function (i) { return i + 1; }, someCode);
-loop (callback);```
+loop (callback);
+```
 
 If the loop is expected to count from zero to a finishing number by one each step, everything but the limit and function body may be omitted:
 ```javascript
 var loop = asyncFor () (10, someCode);
-loop (callback);```
+loop (callback);
+```
 
 The wrapped function is passed (i, _break, _continue, data)
 return void _break () will end looping
@@ -20,13 +22,15 @@ To avoid the need for closures, data may be passed in to the created function be
 ```javascript
 var loop = asyncFor () (10, someCode);
 loop.load ({ sampleData: 'to operate on' });
-loop (callback);```
+loop (callback);
+```
 
 A callback may also be specified in advance
 ```javascript
 var loop = asyncFor () (10, someCode);
 loop.callback (someFunction);
-loop ();```
+loop ();
+```
 
 Calling the created function twice without specifying a new callback will result in an error being thrown, unless reset () is called
 ```javascript
@@ -39,9 +43,11 @@ loop ();
 // Valid
 loop ();
 loop.reset ();
-loop ();``
+loop ();
+```
 
 load, callback and reset are chainable
 ```javascript
-asyncFor () (10, someCode).callback (someFunction). reset ().load ({ sample: 'data' })();```
+asyncFor () (10, someCode).callback (someFunction). reset ().load ({ sample: 'data' })();
+```
 
