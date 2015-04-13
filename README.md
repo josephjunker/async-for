@@ -73,7 +73,6 @@ loop.reset ();
 loop ();
 ```
 
-
 Information may be returned from the loop by passing it to `_break`
 ```javascript
 var loop = _for (10, function (i, _break) {
@@ -87,7 +86,12 @@ loop (function (returnValue) {
 
 The load, callback and reset methods are chainable
 ```javascript
-asyncFor () (10, someCode).callback (someFunction). reset ().load ({ sample: 'data' })();
+var loop = _for (10, loopBody)
+  .callback (someFunction)
+  .reset ()
+  .load ({ sample: 'data' });
+
+loop ();
 ```
 
 ## Limitations
