@@ -40,7 +40,7 @@ module.exports = function asyncFor (initial, test, increment, func) {
     }
 
     func (count, _break, _continue, loadedData);
-  }
+  };
 
   function clearIterationHistory () {
     count = initial;
@@ -69,4 +69,4 @@ module.exports = function asyncFor (initial, test, increment, func) {
   };
 
   return runIterator;
-}
+};

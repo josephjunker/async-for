@@ -176,7 +176,7 @@ describe ('asyncFor', function () {
       var runTwice = function () {
         loop ();
         loop ();
-      }
+      };
 
       should.throws (runTwice);
       done();
