@@ -1,5 +1,5 @@
 # async-for
-Builds a function which lets asynchronous functions run with a for loop like syntax. For efficiency's sake the created loop will not create new functions while executing, and for safety's sake an error will be thrown if any of the loops's callbacks are called twice in given iteration. If the loop will be called from multiple async sources simultaneously, a separate loop function must be created for each source. Data may be loaded into the loop without the use of closures, and error information may be returned when the loop breaks.
+Builds a function which lets asynchronous functions run with a for loop like syntax. For efficiency's sake the created loop will not create new functions while executing, and to prevent silent errors an error will be thrown if any of the loops's callbacks are called twice in given iteration. If the loop will be called from multiple async sources simultaneously, a separate loop function must be created for each source. Data may be loaded into the loop without the use of closures, and error information may be returned when the loop breaks.
 
 ## A brief example
 Here is a contrived loop which uses two synchronous functions:
