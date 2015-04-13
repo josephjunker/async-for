@@ -90,4 +90,5 @@ The load, callback and reset methods are chainable
 asyncFor () (10, someCode).callback (someFunction). reset ().load ({ sample: 'data' })();
 ```
 
-
+## License
+MIT
