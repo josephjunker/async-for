@@ -11,16 +11,28 @@ module.exports = function asyncFor (initial, test, increment, func) {
   var count = initial;
   var callback;
   var loadedData;
+  var iteration = 0;
+  var broke;
+  var lastContinueIteration;
 
   function _break () {
     var tempCallback = callback;
-    if (!callback)
-      throw new Error ('called an async for loop without a new callback');
+    if (lastContinueIteration === iteration) throw new Error ('Called both break and continue during an async for loop');
+    if (!callback) throw new Error ('Called the callback of an async for loop multiple times');
+    brokeAtIteration = iteration;
     callback = null;
     tempCallback.apply (null, arguments);
   }
 
+  function _continue () {
+    lastContinueIteration = iteration;
+    count = increment (count);
+    runIterator ();
+  }
+
   var runIterator = function runIterator (cb) {
+    if (broke) throw new Error ('An async for loop continued iterating after _break was called');
+    iteration++;
     if (cb) callback = cb;
     if (!test (count)) {
       return _break ();
@@ -48,11 +60,6 @@ module.exports = function asyncFor (initial, test, increment, func) {
     count = initial;
     return runIterator;
   };
-
-  function _continue () {
-    count = increment (count);
-    runIterator ();
-  }
 
   return runIterator;
 }

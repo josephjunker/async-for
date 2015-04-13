@@ -1,4 +1,5 @@
 var _for = require ('./index');
+var should = require ('should');
 
 describe ('asyncFor', function () {
 
@@ -17,37 +18,39 @@ describe ('asyncFor', function () {
       var last = -1;
       function assert (num) {
         last++;
-        if (last !== num) throw 'wrong number passed';
+        num.should.eql (last);
       }
 
-      _for (0, function (i) { return i < 10; }, function (i) { return i + 1; },
+      var loop = _for (0, function (i) { return i < 10; }, function (i) { return i + 1; },
         function (i, _break, _continue) {
           assert (i);
           setImmediate (_continue);
-        }) (function () {
-          done ();
         });
+
+      loop (done);
     });
 
     it ('should break when _break is called', function (done) {
-      _for (0, function (i) { return i < 10; }, function (i) { return i + 1; },
-        function (i, _break, _continue) {
+      var loop = _for (0,
+        function (i) { return i < 10; },
+        function (i) { return i + 1; },
+        function body (i, _break, _continue) {
           if (i === 2) return void _break ();
-          if (i === 3) throw 'should have ended on break';
+          i.should.not.eql (3);
           setImmediate (_continue);
-        }) (function () {
-          done ();
         });
+
+      loop (done);
     });
 
     it ('should end when the test condition is false', function (done) {
-      _for (0, function (i) { return i < 10; }, function (i) { return i + 1; },
+      var loop = _for (0,
+        function (i) { return i < 10; },
+        function (i) { return i + 1; },
         function (i, _break, _continue) {
-          if (i === 10) throw 'ran too far';
+          i.should.not.eql (10);
           setImmediate (_continue);
-        }) (function () {
-          done ();
-        });
+        }) (done);
     });
 
   });
@@ -57,24 +60,22 @@ describe ('asyncFor', function () {
     it ('should break without doing anything if given zero', function (done) {
       _for (0, function (i, _break, _continue) {
           throw 'should not have run';
-        }) (function () {
-          done ();
-        });
+        }) (done);
     });
 
     it ('should end when the specified count is reached', function (done) {
       var last = -1;
       function assert (num) {
         last++;
-        if (last !== num) throw 'wrong number passed';
+        last.should.eql (num);
       }
 
       _for (10, function (i, _break, _continue) {
-          if (i === 10) throw 'ran past limit';
+          last.should.not.eql (10);
           assert (i);
           setImmediate (_continue);
         }) (function () {
-          if (last !== 9) throw 'ran to wrong limit';
+          last.should.eql (9);
           done ();
         });
     });
@@ -88,7 +89,7 @@ describe ('asyncFor', function () {
           _continue ();
         });
 
-      func.callback (function () { done (); } );
+      func.callback (done);
       func ();
     });
 
@@ -96,7 +97,7 @@ describe ('asyncFor', function () {
       var expected = 'a';
       var callCount = 0;
       function assert (value) {
-        if (value !== expected) throw 'wrong data was loaded';
+        value.should.eql(expected);
         callCount++;
       }
 
@@ -110,7 +111,7 @@ describe ('asyncFor', function () {
         expected = 'b';
         func.load ('b');
         func (function () {
-          if (callCount !== 20) throw 'count was reset improperly';
+          callCount.should.eql (20);
           done ();
         });
       });
@@ -126,7 +127,7 @@ describe ('asyncFor', function () {
       var actions = [
         function () { func.reset (); func (); },
         function () {
-          if (callCount !== 20) throw 'count was not properly reset';
+          callCount.should.eql (20);
           done();
         }
       ];
@@ -142,7 +143,7 @@ describe ('asyncFor', function () {
 
     it ('should be chainable', function (done) {
       func = _for (10, function (i, _break, _continue, data) {
-          if (data !== 'expected') throw 'bad data loaded';
+          data.should.eql ('expected');
           _continue ();
         });
       func.callback (function () { done (); }).reset ().load ('expected');
@@ -169,12 +170,45 @@ describe ('asyncFor', function () {
     it ('should throw an error if missing a callback', function (done) {
       var loop = _for (10, function (i, _break, _continue, _data) {
           if (i === 10) throw 'ran too far';
-          setImmediate (_continue);
+          _continue ();
         });
 
        loop ();
     });
 
-  });
+    it ('should throw an error if _break is called twice in one body function', function (done) {
+      var loop = _for (10, function (i, _break, _continue, _data) {
+        _break ();
+        _break ();
+        });
 
+       loop (function () {
+         done ();
+       });
+    });
+
+    it ('should throw an error if _continue is called twice in one body function', function (done) {
+      var loop = _for (10, function (i, _break, _continue, _data) {
+        _continue ();
+        _continue ();
+        });
+
+       loop (function () {
+         done ();
+       });
+    });
+
+    it ('should throw an error if _continue and _break are both called', function (done) {
+      var loop = _for (10, function (i, _break, _continue, _data) {
+        _continue ();
+        _break ();
+        });
+
+       loop (function () {
+         done ();
+       });
+    });
+
+  });
+  
 });
