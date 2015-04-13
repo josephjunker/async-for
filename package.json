@@ -4,7 +4,7 @@
   "description": "Iterate over async code with a for-loop like syntax",
   "main": "index.js",
   "scripts": {
-    "test": "jshint index.js && jshint tests.js && mocha tests.js"
+    "test": "jshint index.js && jshint tests && mocha tests"
   },
   "repository": {
     "type": "git",
