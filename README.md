@@ -95,7 +95,7 @@ loop ();
 ```
 
 ## Unsafe mode
-Error checks can optionally be disabled by using unsafe mode. `_for = require ('async-for').unsafe` will create loops which do not check whether a callback is reused, break is used repeatedly, and will fire and forget if no callback is provided.
+Error checks can optionally be disabled by using unsafe mode. `_for = require ('async-for').unsafe` will create loops which do not check whether a callback is reused or break is used repeatedly, and will fire and forget if no callback is provided.
 
 ## Limitations
 The loop created builds up a call stack, so iterating an extremely large number of times will build up a call stack. Also, while the created loops will throw an error if `_break` is called more than once, or in the same iteration as `_continue`, it is not possible to detect that `_continue` is called twice in the same loop iteration without the use of closures, so this check is omitted.
