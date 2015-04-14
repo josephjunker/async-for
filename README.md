@@ -59,7 +59,7 @@ loop.callback (someFunction);
 loop ();
 ```
 
-Calling the created function twice without specifying a new callback will result in an error being thrown. If rerunning the loop with the same callback is desired, the error can be suppressed by explicitly calling the loop function's `.reset ()` method between iterations.
+Calling the created function twice without specifying a new callback will result in an error being thrown. If rerunning the loop with the same callback is desired, the error can be prevented by explicitly calling the loop function's `.reset ()` method between iterations. Calling `.load ()` will implicitly call `.reset ()`.
 ```javascript
 var loop = _for (10, loopBodyFunction);
 loop.callback (someFunction);
