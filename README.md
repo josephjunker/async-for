@@ -1,5 +1,5 @@
 # async-for
-Builds a function which lets asynchronous functions run with a for loop like syntax. For efficiency's sake the created loop will not create new functions while executing, and to prevent silent errors an error will be thrown if a loop's callback is called multiple times. If the loop will be called from multiple async sources simultaneously, a separate loop function must be created for each source. Data may be loaded into the loop without the use of closures, and error information may be returned when the loop breaks.
+Builds a function which lets asynchronous functions run with a for loop like syntax. For efficiency's sake the created loop will not create new functions while executing, and to prevent silent errors the default behaviour is to throw an error if a loop's callback is called multiple times. If the loop will be called from multiple async sources simultaneously, a separate loop function must be created for each source. Data may be loaded into the loop without the use of closures, and error information may be returned when the loop breaks.
 
 ## A brief example
 Here is a contrived loop which uses two synchronous functions:
@@ -93,6 +93,9 @@ var loop = _for (10, loopBody)
 
 loop ();
 ```
+
+## Unsafe mode
+Error checks can optionally be disabled by using unsafe mode. `_for = require ('async-for').unsafe` will create loops which do not check whether a callback is reused, break is used repeatedly, and will fire and forget if no callback is provided.
 
 ## Limitations
 The loop created builds up a call stack, so iterating an extremely large number of times will build up a call stack. Also, while the created loops will throw an error if `_break` is called more than once, or in the same iteration as `_continue`, it is not possible to detect that `_continue` is called twice in the same loop iteration without the use of closures, so this check is omitted.
