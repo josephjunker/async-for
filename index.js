@@ -28,7 +28,7 @@ var throwError = {
 };
 
 
-function getLoopInstance (initial, test, increment, func, enableExceptions) {
+function getLoopInstance (initial, test, increment, func, enableExceptions, syncMode) {
 
   function makeLoopState () {
     return {
@@ -46,7 +46,8 @@ function getLoopInstance (initial, test, increment, func, enableExceptions) {
       called = true;
       state.lastContinueIteration = state.iteration;
       state.count = increment (state.count);
-      runIterator (state);
+      if (syncMode) return void runIterator (state);
+      setImmediate (runIterator, state);
     };
   }
 
@@ -103,22 +104,24 @@ function getLoopInstance (initial, test, increment, func, enableExceptions) {
 
 var defaultIncrement = function (count) { return count + 1; };
 
-function makeAsyncFor (enableExceptions) {
+function makeAsyncFor (enableExceptions, syncMode) {
 
   return function (initial, test, increment, func) {
     if (!func) {
       //we got (maxCount, func)
       var max = initial;
       var defaultTest = function (count) { return count < max; };
-      return getLoopInstance (0, defaultTest, defaultIncrement, test, enableExceptions);
+      return getLoopInstance (0, defaultTest, defaultIncrement, test, enableExceptions, syncMode);
     }
 
-    return getLoopInstance (initial, test, increment, func, enableExceptions);
+    return getLoopInstance (initial, test, increment, func, enableExceptions, syncMode);
   };
 }
 
 
 var _for = makeAsyncFor (true);
 _for.unsafe = makeAsyncFor (false);
+_for.sync = makeAsyncFor (true, true);
+_for.unsafeSync = makeAsyncFor (false, true);
 
 module.exports = _for;

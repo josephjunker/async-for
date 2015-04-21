@@ -1,9 +1,9 @@
 var asyncFor = require ('../index');
-var unsafeFor = asyncFor.unsafe;
+var unsafeFor = asyncFor.unsafeSync;
 var should = require ('should');
 
 function test (safeMode) {
-  var _for = safeMode ? asyncFor : unsafeFor;
+  var _for = safeMode ? asyncFor.sync : unsafeFor;
   var maybe = safeMode ? '' : 'not';
   var mode = safeMode ? ' in safe mode' : ' in unsafe mode';
 
