@@ -38,13 +38,17 @@ function makeSafeContinue (_continue, name) {
 
 function getLoopInstance (initial, test, increment, func, enableExceptions, safeMode) {
 
-  var count = initial;
-  var callback;
-  var loadedData;
-  var iteration = 0;
-  var broke = false;
-  var lastContinueIteration;
-  var name = null;
+  var count, callback, loadedData, iteration, broke, lastContinueIteration, name;
+
+  function init () {
+    count = initial;
+    callback = null;
+    loadedData = null;
+    iteration = 0;
+    broke = false;
+  }
+
+  //init ();
 
   function _continue () {
     lastContinueIteration = iteration;
@@ -60,6 +64,8 @@ function getLoopInstance (initial, test, increment, func, enableExceptions, safe
   }
 
   var runIteratorInitial = function runIteratorInitial (data, cb) {
+    init ();
+
     //Called with just callback, no data
     if (!cb) {
       cb = data;
@@ -75,6 +81,7 @@ function getLoopInstance (initial, test, increment, func, enableExceptions, safe
   };
 
   runIteratorInitial.fireAndForget = function fireAndForget (data) {
+    init ();
     loadedData = data;
     callback = noop;
     runIterator ();
@@ -82,6 +89,7 @@ function getLoopInstance (initial, test, increment, func, enableExceptions, safe
 
   runIteratorInitial.setName = function setLoopName (loopName) {
     name = loopName;
+    return runIteratorInitial;
   };
 
   function runIterator () {
