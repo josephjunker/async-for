@@ -1,6 +1,6 @@
 {
   "name": "async-for",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Iterate over async code with a for-loop like syntax",
   "main": "index.js",
   "scripts": {

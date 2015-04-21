@@ -9,30 +9,6 @@ function test (safeMode) {
 
   describe ('callback safety checks' + mode, function (done) {
 
-    it ('should ' + maybe + ' throw an error if the same callback is used twice', function (done) {
-      var loop = _for (10, function (i, _break, _continue, _data) {
-          _continue ();
-        });
-
-      var count = 0;
-      loop.callback (function () {
-        count++;
-        if (!safeMode && count === 2) done ();
-      });
-
-      var runTwice = function () {
-        loop ();
-        loop ();
-      };
-
-      if (safeMode) {
-        should.throws (runTwice);
-        done();
-      } else {
-        runTwice ();
-      }
-    });
-
     it ('should ' + maybe + ' throw an error if missing a callback', function (done) {
       var loop = _for (10, function (i, _break, _continue, _data) {
           if (i === 10) throw 'ran too far';
@@ -52,17 +28,22 @@ function test (safeMode) {
         });
 
       var callbackCount = 0;
-      loop.callback (function () {
-        callbackCount++;
-        if (!safeMode && callbackCount === 2) done ();
-      });
+
+      function run () {
+        loop (function () {
+          callbackCount++;
+        });
+      }
 
       if (safeMode) {
-        should.throws (loop, /continued iterating/);
+        should.throws (run, /continued iterating/);
         callbackCount.should.eql (1);
         done ();
       } else {
-        loop ();
+        loop (function () {
+          callbackCount++;
+          if (!safeMode && callbackCount === 2) done ();
+        });
       }
     });
 
@@ -73,17 +54,22 @@ function test (safeMode) {
         });
 
       var callbackCount = 0;
-      loop.callback (function () {
-        callbackCount++;
-        if (!safeMode && callbackCount === 2) done ();
-      });
+
+      function run () {
+        loop (function () {
+          callbackCount++;
+        });
+      }
 
       if (safeMode) {
-        should.throws (loop, /continued iterating/);
+        should.throws (run, /continued iterating/);
         callbackCount.should.eql (1);
         done ();
       } else {
-        loop ();
+        loop (function () {
+          callbackCount++;
+          if (!safeMode && callbackCount === 2) done ();
+        });
       }
     });
 
@@ -94,17 +80,23 @@ function test (safeMode) {
         });
 
       var callbackCount = 0;
-      loop.callback (function () {
-        callbackCount++;
-        if (!safeMode && callbackCount === 2) done ();
-      });
+
+
+      function run () {
+        loop (function () {
+          callbackCount++;
+        });
+      }
 
       if (safeMode) {
-        should.throws (loop, /continued iterating/);
+        should.throws (run, /continued iterating/);
         callbackCount.should.eql (1);
         done ();
       } else {
-        loop ();
+        loop (function () {
+          callbackCount++;
+          if (!safeMode && callbackCount === 2) done ();
+        });
       }
     });
 
