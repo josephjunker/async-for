@@ -27,110 +27,98 @@ var throwError = {
         (loopName || "") + ' calls "return void _break()" or "return void continue()" rather than just "break()" or "continue()".'); }
 };
 
-function makeSafeContinue (_continue, name) {
-  var called = false;
-  return function continueWrapped () {
-    if (called) throwError.doubleContinue (name);
-    called = true;
-    _continue ();
-  };
-}
 
-function getLoopInstance (initial, test, increment, func, enableExceptions, safeMode) {
+function getLoopInstance (initial, test, increment, func, enableExceptions) {
 
-  var count, callback, loadedData, iteration, broke, lastContinueIteration, name;
-
-  function init () {
-    count = initial;
-    callback = null;
-    loadedData = null;
-    iteration = 0;
-    broke = false;
+  function makeLoopState () {
+    return {
+      count: initial,
+      iteration: 0,
+      broke: false,
+      lastContinueIteration: -1
+    };
   }
 
-  //init ();
-
-  function _continue () {
-    lastContinueIteration = iteration;
-    count = increment (count);
-    runIterator ();
+  function makeContinue (state) {
+    var called = false;
+    return function _continue () {
+      if (enableExceptions && called) throwError.doubleContinue (state.name);
+      called = true;
+      state.lastContinueIteration = state.iteration;
+      state.count = increment (state.count);
+      runIterator (state);
+    };
   }
 
-  function _break () {
-    if (enableExceptions && broke) throwError.continuedAfterBreak (name);
-    if (enableExceptions && lastContinueIteration === iteration) throwError.calledBreakAndContinue (name);
-    broke = true;
-    callback.apply (null, arguments);
+  function makeBreak (state) {
+    return function _break () {
+      if (enableExceptions && state.broke) throwError.continuedAfterBreak (state.name);
+      if (enableExceptions && state.lastContinueIteration === state.iteration) throwError.calledBreakAndContinue (state.name);
+      state.broke = true;
+      if (state.callback) state.callback.apply (null, arguments);
+    };
   }
 
-  var runIteratorInitial = function runIteratorInitial (data, cb) {
-    init ();
+  function makeInitialIterator (name, fireAndForget) {
+    var initial = function initialIterator (data, cb) {
+      var state = makeLoopState ();
 
-    //Called with just callback, no data
-    if (!cb) {
-      cb = data;
-    } else {
-      loadedData = data;
+      //Called with just callback, no data
+      if (!cb) {
+        cb = data;
+      } else {
+        state.data = data;
+      }
+
+      if (!fireAndForget && enableExceptions && isNotFunction (cb)) throwError.forgotCallback (name);
+
+      state.callback = cb;
+      state.name = name;
+      runIterator (state);
+    };
+
+    if (!fireAndForget) initial.fireAndForget = makeInitialIterator (name, true);
+    initial.setName = function setLoopName (loopName) {
+      return makeInitialIterator (loopName);
+    };
+
+    return initial;
+  }
+
+  function runIterator (state) {
+
+    if (enableExceptions && state.broke) throwError.continuedAfterBreak (state.name);
+
+    state.iteration++;
+    if (!test (state.count)) {
+      return makeBreak (state)();
     }
 
-    if (enableExceptions && isNotFunction (cb)) throwError.forgotCallback (name);
-
-    callback = cb;
-
-    runIterator ();
-  };
-
-  runIteratorInitial.fireAndForget = function fireAndForget (data) {
-    init ();
-    loadedData = data;
-    callback = noop;
-    runIterator ();
-  };
-
-  runIteratorInitial.setName = function setLoopName (loopName) {
-    name = loopName;
-    return runIteratorInitial;
-  };
-
-  function runIterator () {
-
-    if (enableExceptions && broke) throwError.continuedAfterBreak (name);
-
-    iteration++;
-    if (!test (count)) {
-      return _break ();
-    }
-
-    if (safeMode) {
-      func (count, _break, _continue, loadedData);
-    } else {
-      func (count, _break, makeSafeContinue (_continue, name), loadedData);
-    }
+    func (state.count, makeBreak (state), makeContinue (state), state.data);
   }
 
-  return runIteratorInitial;
+  return makeInitialIterator ();
 }
 
 
 var defaultIncrement = function (count) { return count + 1; };
 
-function makeAsyncFor (enableExceptions, safeMode) {
+function makeAsyncFor (enableExceptions) {
 
   return function (initial, test, increment, func) {
     if (!func) {
       //we got (maxCount, func)
       var max = initial;
       var defaultTest = function (count) { return count < max; };
-      return getLoopInstance (0, defaultTest, defaultIncrement, test, enableExceptions, safeMode);
+      return getLoopInstance (0, defaultTest, defaultIncrement, test, enableExceptions);
     }
 
-    return getLoopInstance (initial, test, increment, func, enableExceptions, safeMode);
+    return getLoopInstance (initial, test, increment, func, enableExceptions);
   };
 }
 
 
-var _for = makeAsyncFor (true, false);
-_for.safe = makeAsyncFor (true, true);
-_for.unsafe = makeAsyncFor (false, false);
+var _for = makeAsyncFor (true);
+_for.unsafe = makeAsyncFor (false);
 
 module.exports = _for;

@@ -100,6 +100,30 @@ function test (safeMode) {
       }
     });
 
+
+    it ('should ' + maybe + ' throw an error when _continue () is called twice', function (done) {
+      var loop = _for (10, function (i, _break, _continue) {
+        _continue ();
+        _continue ();
+      });
+
+      function callOnce (func) {
+        var called = false;
+        return function () {
+          if (called) return;
+          called = true;
+          func ();
+        };
+      }
+
+      if (safeMode) {
+        should.throws (loop.fireAndForget, /_continue twice/);
+        done ();
+      } else {
+        loop (callOnce (done));
+      }
+    });
+
   });
 
 }
