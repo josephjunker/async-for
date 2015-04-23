@@ -1,79 +1,63 @@
 # async-for
-Builds a function which lets asynchronous functions run with a for loop like syntax. For efficiency's sake the created loop will not create new functions while executing, and to prevent silent errors the default behaviour is to throw an error if a loop's callback is called multiple times. If the loop will be called from multiple async sources simultaneously, a separate loop function must be created for each source. Data may be loaded into the loop without the use of closures, and error information may be returned when the loop breaks.
+Builds a function which lets asynchronous functions run with a for loop like syntax. The function does not store state and may be reused from multiple asynchronous computations simultaneously, and can load data for loop invocations without having to create the loop in a closure. The created loops check for a range of error conditions, such as a missing callback or exiting the loop multiple times, and throws descriptive errors in these cases. By default the loop spreads iterations across the event loop using setImmediate() and thus can iterate indefinitely without overflowing the stack.
+
+## Installation
+`npm install async-for`
 
 ## A brief example
 Here is a contrived loop which uses two synchronous functions:
 ```javascript
-for (var i = 0; i < 10; i++) { 
-  var result = doSynchronousComputationForIteration (i);
+for(var i = 0; i < 10; i++) { 
+  var result = doSomeSynchronousCoputationHere(i);
   if (result.skipIteration) continue;
   if (result.isComplete) break;
-  doMoreSynchronousComputation;
+  doMoreSynchronousComputationHere();
 }
 ```
 
 Here is the equivalent loop in which the functions are asynchronous:
 ```javascript
-var _for = require ('asyncFor');
+var _for = require('asyncFor');
 
-var loop = _for () (0, function (i) { return i < 10; }, function (i) { return i + 1; },
-  function loopBody (i, _break, _continue) {
-    doAsynchronousComputationForIteration (i, function callback (result) {
+var loop = _for(0, function (i) { return i < 10; }, function (i) { return i + 1; },
+  function loopBody(i, _break, _continue) {
+    doSomeAsynchronousComputationHere(i, function callback (result) {
       if (result.skipIteration) return void _continue ();
       if (result.isComplete) return void _break ();
-      doMoreAsynchronousComputation (_continue);
+      doMorAsynchronousComputationHere(_continue);
     });
   }));
   
-loop (callbackFunctionGoesHere);
+loop(callbackFunctionGoesHere);
 ```
 
 ## Overview
 async-for takes four arguments:
-* The initial value of the guard. This may be any type, not just a number. Equivalent to the `var i = 0;` section of a for loop.
-* The check clause. This is a function which takes one argument and returns a boolean. At the end of each iteration this function will be passed the current value of the guard. If the function returns false, iteration stops. Equivalent to the `i < max;` section of a for loop.
-* The increment clause. This is a function which takes one argument and returns one value. At the end of each iteration the current value of the guard will be passed to this function, and the guard will be set to the return value of this function for the next iteration. Equivalent to the `i++;` section of a for loop
+* The initial value of the iteration variable. This may be any type, not just a number. Equivalent to the `var i = 0;` section of a for loop.
+* The check clause. This is a function which takes one argument and returns a boolean. At the end of each iteration this function will be passed the current value of the iteration variable. If the function returns false, iteration stops. Equivalent to the `i < max;` section of a for loop.
+* The increment clause. This is a function which takes one argument and returns one value. At the end of each iteration the current value of the iteration variable will be passed to this function, and the iteration variable will be set to the return value of this function for the next iteration. Equivalent to the `i++;` section of a for loop
 * The loop body. This is a function which takes three arguments: `i`, `_break`, and `_continue`
 
-The wrapped function is passed the arguments `(i, _break, _continue, data)`. To end looping call `return void _break ()`. To move to the next iteration call `return void _continue ()`. `_continue` may be passed as a callback to asynchronous functions in the body. `data` holds whatever was passed to the loop function at invocation time, as described below.
+The wrapped function is passed the arguments `(i, _break, _continue, data)`. To end looping call `return void _break()`. To move to the next iteration call `return void _continue()`. `_continue` may be passed as a callback to asynchronous functions in the body. `data` holds whatever was passed to the loop function at invocation time, as described below.
 
 If the loop is expected to count from zero to a finishing number by one each step, everything but the limit and function body may be omitted:
 ```javascript
-var loop = _for (10, loopBodyFunction);
-loop (callback);
+var loop = _for(10, loopBodyFunction);
+//Equivalent to var loop = _for(0, function (i) { return i < 10; }, function (i) { return i + 1; }, loopBodyFunction)
+
+loop(callback);
 ```
 
-To avoid the need for closures, data may be passed in to the created function before execution via the `.load ()` method on the loop function
+Data may be passed to the loop function along with the callback, and will be provided to every iteration of the loop
 ```javascript
-var loop = _for (10, function body (i, _break, _continue, data) {
-  someAsyncFunction (data, _continue);
+var loop = _for(10, function body (i, _break, _continue, data) {
+  someAsyncFunction(data, _continue);
 });
-loop.load ({ sampleData: 'to operate on' });
-loop (callback);
+
+loop({ sampleData: 'to operate on' }, callback);
 ```
 
-A callback may also be specified in advance via the `.callback ()` function on the loop function
-```javascript
-var loop = _for (10, loopBodyFunction);
-loop.callback (someFunction);
-loop ();
-```
-
-Calling the created function twice without specifying a new callback will result in an error being thrown. If rerunning the loop with the same callback is desired, the error can be prevented by explicitly calling the loop function's `.reset ()` method between iterations. Calling `.load ()` will implicitly call `.reset ()`.
-```javascript
-var loop = _for (10, loopBodyFunction);
-loop.callback (someFunction);
-// Invalid
-loop ();
-loop ();
-
-// Valid
-loop ();
-loop.reset ();
-loop ();
-```
-
-Information may be returned from the loop by passing it to `_break`
+A value may be returned from the loop by passing it to `_break`
 ```javascript
 var loop = _for (10, function (i, _break) {
   if (i === 5) return void _break (i);
@@ -84,21 +68,23 @@ loop (function (returnValue) {
 });
 ```
 
-The load, callback and reset methods are chainable
-```javascript
-var loop = _for (10, loopBody)
-  .callback (someFunction)
-  .reset ()
-  .load ({ sample: 'data' });
+## Errors and debugging
+To avoid silent errors, created loops will throw errors when cases occur that indicate a programming error, and which could lead to difficult-to-debug behavior. These cases are:
+* If both `_break` and `_continue` are called in the same iteration of a loop
+* If `_continue` is called multiple times in the same iteration of a loop
+* If a loop is invoked without providing a callback or operating in fire-and-forget mode (explained below)
+If this behaviour is not desired, loops can be created in unsafe mode by using `var _for = require('async-for').unsafe;` instead of `var _for = require('async-for');`, but this is highly unrecommended.
 
-loop ();
-```
+If a loop should be run without a callback, it can be invoked as so:
+```var loop = _for(10, someBodyFunction);
+loop.fireAndForget();```
 
-## Unsafe mode
-Error checks can optionally be disabled by using unsafe mode. `_for = require ('async-for').unsafe` will create loops which do not check whether a callback is reused or break is used repeatedly, and will fire and forget if no callback is provided.
+For ease of debugging, loops may be given names, which will be included in error messages in the case of an error:
+``var loop = _for(10, someBodyFunction);
+var loopWithName = loop.named('Susan');
+loopWithName(data, callback);```
 
-## Limitations
-The loop created builds up a call stack, so iterating an extremely large number of times will build up a call stack. Also, while the created loops will throw an error if `_break` is called more than once, or in the same iteration as `_continue`, it is not possible to detect that `_continue` is called twice in the same loop iteration without the use of closures, so this check is omitted.
+`loop.named('Bob').fireAndForget()` will behave as expected.
 
 ## License
 MIT
