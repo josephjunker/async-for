@@ -22,8 +22,8 @@ var _for = require('asyncFor');
 var loop = _for(0, function (i) { return i < 10; }, function (i) { return i + 1; },
   function loopBody(i, _break, _continue) {
     doSomeAsynchronousComputationHere(i, function callback (result) {
-      if (result.skipIteration) return void _continue ();
-      if (result.isComplete) return void _break ();
+      if (result.skipIteration) return void _continue();
+      if (result.isComplete) return void _break();
       doMorAsynchronousComputationHere(_continue);
     });
   }));
@@ -67,6 +67,8 @@ loop (function (returnValue) {
   // returnValue === 5
 });
 ```
+## Asynchronicity
+To avoid stack overflows when performing a high number of iterations when given a synchronous loop body, iterations are spread across event loop ticks by using `setImmediate()` every time `_continue` is called. If this behavior is not desired, use `var _for = require('async-for').sync;` instead of `var _for = require('async-for');`
 
 ## Errors and debugging
 To avoid silent errors, created loops will throw errors when cases occur that indicate a programming error, and which could lead to difficult-to-debug behavior. These cases are:
@@ -76,13 +78,17 @@ To avoid silent errors, created loops will throw errors when cases occur that in
 If this behaviour is not desired, loops can be created in unsafe mode by using `var _for = require('async-for').unsafe;` instead of `var _for = require('async-for');`, but this is highly unrecommended.
 
 If a loop should be run without a callback, it can be invoked as so:
-```var loop = _for(10, someBodyFunction);
-loop.fireAndForget();```
+```javascript
+var loop = _for(10, someBodyFunction);
+loop.fireAndForget();
+```
 
 For ease of debugging, loops may be given names, which will be included in error messages in the case of an error:
-``var loop = _for(10, someBodyFunction);
+```javascript
+var loop = _for(10, someBodyFunction);
 var loopWithName = loop.named('Susan');
-loopWithName(data, callback);```
+loopWithName(data, callback);
+```
 
 `loop.named('Bob').fireAndForget()` will behave as expected.
 
